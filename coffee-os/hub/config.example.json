@@ -1,0 +1,38 @@
+{
+  "machine_name": "coffee-01",
+  "machine_url": "http://192.168.4.1",
+  "listen_port": 8000,
+  "data_dir": "/var/lib/coffee-hub",
+  "ui_dir": "/opt/coffee-os/ui",
+  "owner_pin": "000000",
+  "hub_pin": "",
+  "sync_minutes": 5,
+  "watch_seconds": 60,
+  "ntfy_topic": "",
+  "ntfy_server": "https://ntfy.sh",
+  "peers": [],
+  "capacity": {
+    "beans_g": 1200,
+    "canister_g": 2000,
+    "syrup_ml": 1000,
+    "cups": 40
+  },
+  "low_stock": {
+    "beans_g": 150,
+    "canister_g": 150,
+    "syrup_ml": 100,
+    "cups": 10
+  },
+  "canister_names": [
+    "Sugar",
+    "Creamer",
+    "Chocolate",
+    "French vanilla"
+  ],
+  "syrup_names": [
+    "Vanilla",
+    "Caramel"
+  ],
+  "daily_report": "20:30",
+  "service_corner": true
+}

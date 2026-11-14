@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6A42">
+<link rel="manifest" href="/control.webmanifest">
+<link rel="icon" href="/icon.svg">
+<title>Machine control</title>
+<style>
+:root{
+  --paper:#F5F7F6; --card:#FFFFFF; --ink:#12261C; --soft:#5B6B63; --line:#DCE3DF;
+  --green:#0F6A42; --green-2:#E3F1E9; --amber:#F6B800; --amber-2:#FFF4CC; --red:#C8392B; --red-2:#FBE5E2;
+  --display:"Roboto Condensed","sans-serif-condensed","Arial Narrow",sans-serif;
+  --body:Roboto,"Noto Sans",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{--paper:#0E1713; --card:#15211B; --ink:#E7EFEA; --soft:#9DB0A6; --line:#26362E; --green-2:#14301F; --amber-2:#3A3010; --red-2:#3B1A16}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.top{position:sticky;top:0;z-index:5;background:var(--green);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px;display:flex;align-items:center;gap:10px}
+.top h1{font-family:var(--display);font-size:23px;margin:0;flex:1;line-height:1.1}
+.top small{display:block;font:14px var(--body);opacity:.85}
+.top a,.top button{color:#fff;background:rgba(255,255,255,.16);border:0;border-radius:10px;padding:9px 12px;text-decoration:none;font-size:15px}
+main{padding:14px;max-width:760px;margin:0 auto 60px}
+h2{font-family:var(--display);font-size:22px;margin:22px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.status{display:flex;gap:14px;align-items:center}
+.status .dot{width:18px;height:18px;border-radius:50%;background:var(--green);flex:none}
+.status.warn .dot{background:var(--amber)} .status.bad .dot{background:var(--red)}
+.status.bad{background:var(--red-2);border-color:#EDB2AA} .status.warn{background:var(--amber-2);border-color:#F1D57A}
+.status b{font-family:var(--display);font-size:26px;display:block;line-height:1.1}
+.muted{color:var(--soft);font-size:14px}
+.big{width:100%;border:0;border-radius:16px;padding:18px;font-family:var(--display);font-size:26px;color:#fff;background:var(--green)}
+.big.closed{background:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 12px;text-align:left;min-height:84px}
+.tile b{display:block;font-size:17px}
+.tile span{color:var(--soft);font-size:13px}
+.tile:active,.big:active{transform:scale(.98)}
+.tile.danger b{color:var(--red)}
+.stock{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.stock:last-child{border-bottom:0}
+.bar{grid-column:1/2;height:8px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green)}
+.bar i.low{background:var(--red)}
+.btn{background:var(--green);color:#fff;border:0;border-radius:12px;padding:10px 14px}
+.btn.ghost{background:transparent;color:var(--green);border:1px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:14px}
+select,input[type=time],input[type=number]{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hours{display:grid;grid-template-columns:40px 52px minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center;margin:6px 0}
+.hours input{width:100%;min-width:0;padding:8px 4px}
+.switch{position:relative;width:52px;height:30px;border-radius:20px;border:0;background:var(--line);padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.15s}
+.switch[aria-checked=true]{background:var(--green)}
+.switch[aria-checked=true]::after{left:25px}
+.log div{padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.log div:last-child{border-bottom:0}
+#login{max-width:340px;margin:10vh auto;text-align:center}
+#pin{width:100%;font-size:30px;text-align:center;letter-spacing:.3em;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);margin:12px 0}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pad button{font-size:28px;padding:16px 0;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.hide{display:none!important}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:11px 16px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;z-index:20}
+#toast.on{opacity:1}
+#ask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:15;padding:20px}
+#ask .card{max-width:380px;width:100%}
+#ask h3{font-family:var(--display);font-size:22px;margin:0 0 6px}
+body.kiosk{font-size:18px}
+body.kiosk .tile{min-height:100px}
+body.kiosk .tile b{font-size:20px}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1 id="title">Machine control<small id="sub">Sign in with the hub PIN</small></h1>
+  <a href="/hub" id="toHub">Sales</a>
+  <a href="/" id="toMenu" class="hide">Back to menu</a>
+</div>
+
+<div id="login">
+  <p>Enter the hub PIN.<br><span class="muted">It's the owner PIN unless you set hub_pin in config.json.</span></p>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="Hub PIN">
+  <div class="pad" id="pad"></div>
+  <p><button class="btn" id="go" style="width:100%;padding:14px">Sign in</button></p>
+  <p class="muted" id="loginMsg"></p>
+</div>
+
+<main id="app" class="hide">
+  <div class="card status" id="statusCard">
+    <div class="dot"></div>
+    <div style="flex:1"><b id="stText">...</b><span class="muted" id="stDetail"></span></div>
+  </div>
+  <button class="big" id="openBtn">...</button>
+  <p class="muted" id="hoursNote" style="margin:6px 4px 0"></p>
+
+  <h2>Quick jobs</h2>
+  <div class="grid">
+    <button class="tile" data-act="bottlesSwapped"><b>Bottles swapped</b><span>After putting in 2 full bottles</span></button>
+    <button class="tile" data-act="rinse"><b>Rinse now</b><span>Flushes the brewer and mixers</span></button>
+    <button class="tile" data-act="prime"><b>Prime water</b><span>After a bottle ran dry</span></button>
+    <button class="tile" data-act="clearFaults"><b>Clear faults</b><span>After fixing the problem</span></button>
+  </div>
+
+  <h2>Stock</h2>
+  <div class="card" id="stock"></div>
+
+  <h2>Test a drink</h2>
+  <div class="card row">
+    <select id="tDrink" aria-label="Drink"></select>
+    <select id="tSize" aria-label="Size"></select>
+    <button class="btn" id="tGo">Make it free</button>
+  </div>
+
+  <h2>Opening hours</h2>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div><b>Open and close by itself</b><br><span class="muted">The Open/Close button still works. The hours take over again at the next opening or closing time.</span></div>
+      <button class="switch" id="hEnabled" role="switch" aria-checked="false" aria-label="Use opening hours"></button>
+    </div>
+    <div id="hours"></div>
+    <p><button class="btn" id="hSave">Save hours</button></p>
+  </div>
+
+  <h2>More</h2>
+  <div class="grid">
+    <button class="tile" data-act="unlockDoor" data-ask="Unlock the door?|The door lock opens for a few seconds."><b>Unlock door</b><span>For loading and cleaning</span></button>
+    <button class="tile" data-act="cancel" data-ask="Stop the current drink?|The customer's counter code keeps working."><b>Stop drink</b><span>If a drink is stuck</span></button>
+    <button class="tile" id="freeBtn"><b>Free mode</b><span id="freeTxt"></span></button>
+    <button class="tile" id="cupBtn"><b>Cup system</b><span id="cupTxt"></span></button>
+    <button class="tile" id="moveBtn"><b>Move the machine</b><span id="moveTxt"></span></button>
+    <button class="tile danger" data-act="restart" data-ask="Restart the controller?|Takes about 20 seconds. Don't do it during a drink."><b>Restart controller</b><span>If the screen says it's not answering</span></button>
+  </div>
+
+  <h2>What happened</h2>
+  <div class="card log" id="log"></div>
+  <p class="muted" id="foot"></p>
+</main>
+
+<div id="ask" class="hide"><div class="card">
+  <h3 id="askT"></h3><p class="muted" id="askD"></p>
+  <div class="row" style="justify-content:flex-end"><button class="btn ghost" id="askNo">Cancel</button><button class="btn" id="askYes">Yes</button></div>
+</div></div>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const kiosk = location.pathname.startsWith("/service");
+let pin = kiosk ? "" : (sessionStorage.getItem("hubPin") || "");
+let state = null, idleTimer = null, busy = false;
+
+if (kiosk) {
+  document.body.classList.add("kiosk");
+  $("toMenu").classList.remove("hide"); $("toHub").classList.add("hide");
+  $("title").firstChild.textContent = "Service menu";
+  const back = () => location.replace("/");
+  const poke = () => { clearTimeout(idleTimer); idleTimer = setTimeout(back, 120000); };   // back to the menu after 2 idle minutes
+  ["pointerdown", "keydown"].forEach(e => addEventListener(e, poke)); poke();
+}
+
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("on"), 3200); }
+function ask(title, detail){
+  return new Promise(res=>{
+    $("askT").textContent=title; $("askD").textContent=detail||""; $("ask").classList.remove("hide");
+    const done = v => { $("ask").classList.add("hide"); $("askYes").onclick=$("askNo").onclick=null; res(v); };
+    $("askYes").onclick=()=>done(true); $("askNo").onclick=()=>done(false);
+  });
+}
+async function api(path, body){
+  const r = await fetch(path, body===undefined ? {headers:{"X-Hub-Pin":pin}} :
+    {method:"POST", headers:{"X-Hub-Pin":pin, "Content-Type":"application/json"}, body:JSON.stringify(body)});
+  let j = {}; try { j = await r.json(); } catch(e) {}
+  if (r.status === 401) { signOut(j.error || "Wrong PIN"); throw new Error("pin"); }
+  if (!r.ok || j.ok === false) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+function signOut(msg){ pin=""; sessionStorage.removeItem("hubPin"); $("app").classList.add("hide"); $("login").classList.remove("hide"); $("loginMsg").textContent=msg||""; }
+
+// PIN pad (handy on the touchscreen, works with a keyboard too)
+"1 2 3 4 5 6 7 8 9 ⌫ 0 ✓".split(" ").forEach(k=>{
+  const b=document.createElement("button"); b.textContent=k; b.type="button";
+  b.onclick=()=>{ const p=$("pin"); if(k==="⌫") p.value=p.value.slice(0,-1); else if(k==="✓") signIn(); else p.value+=k; };
+  $("pad").appendChild(b);
+});
+$("go").onclick=signIn; $("pin").onkeydown=e=>{ if(e.key==="Enter") signIn(); };
+async function signIn(){
+  pin=$("pin").value.trim(); $("pin").value="";
+  try { await load(); if(!kiosk) sessionStorage.setItem("hubPin", pin);
+        $("login").classList.add("hide"); $("app").classList.remove("hide"); }
+  catch(e){ if(e.message!=="pin") $("loginMsg").textContent=e.message; }
+}
+
+async function run(action, extra){
+  if (busy) return; busy = true;
+  try { const j = await api("/hub/api/control", Object.assign({action}, extra||{})); toast(j.message || "Done"); }
+  catch(e){ if(e.message!=="pin") toast(e.message); }
+  busy = false; setTimeout(load, 600);
+}
+document.querySelectorAll("[data-act]").forEach(b=>b.onclick=async()=>{
+  if (b.dataset.ask){ const [t,d]=b.dataset.ask.split("|"); if(!await ask(t,d)) return; }
+  run(b.dataset.act);
+});
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function ago(t){ const s=Math.round(Date.now()/1000-t); return s<60?"just now":s<3600?Math.round(s/60)+" min ago":s<86400?Math.round(s/3600)+" h ago":new Date(t*1000).toLocaleDateString(); }
+
+async function load(){
+  state = await api("/hub/api/control/state");
+  render();
+}
+function render(){
+  const s=state.summary||{}, h=state.health||{}, set=s.settings||{}, st=s.status||{};
+  $("sub").textContent = h.name + (h.firmware ? " · firmware " + h.firmware : "");
+  // status
+  const card=$("statusCard"); card.className="card status";
+  let text, detail=[];
+  if (!h.online){ text="Controller not answering"; card.classList.add("bad"); detail.push("Check power and the machine's Wi-Fi."); }
+  else if (s.faults){ text="Stopped: "+s.faults; card.classList.add("bad"); }
+  else if (set.moving){ text="Ready to move"; card.classList.add("warn"); }
+  else if (set.paused){ text="Closed"; card.classList.add("warn"); }
+  else if (!s.selling){ text=s.blockedReason||"Not selling"; card.classList.add("warn"); }
+  else text="Selling";
+  if (st.phase && st.phase!=="idle") detail.push("Now: "+(st.drink||"drink")+" "+(st.label||st.phase));
+  const t=s.temps||{}; if (t.espresso!=null) detail.push(`Espresso ${t.espresso}°C · hot water ${t.boiler}°C`);
+  const w=s.water||{}; if (w.empty) detail.push("Water bottles empty"); else if (w.low) detail.push("Water low");
+  detail.push(`Today: ${state.today.count} drinks, $${(state.today.cents/100).toFixed(2)}`);
+  $("stText").textContent=text; $("stDetail").innerHTML=detail.map(esc).join("<br>");
+  // open/close
+  const ob=$("openBtn");
+  ob.textContent = set.paused ? "Open for sales" : "Close sales";
+  ob.className = "big" + (set.paused ? "" : " closed");
+  ob.onclick = async()=>{ if(!set.paused && !await ask("Close sales?","The screen shows Closed. Heaters stay on, so opening again is instant.")) return; run(set.paused?"open":"close"); };
+  const so=state.scheduledOpen;
+  $("hoursNote").textContent = so===null ? "" : "Opening hours are on: the machine should be " + (so?"open":"closed") + " right now.";
+  // stock
+  const inv=s.inventory||{}, cap=state.capacity, lim=state.lowStock;
+  const rows=[];
+  const add=(name, val, max, unit, key, low)=>rows.push(`<div class="stock"><div><b>${esc(name)}</b> <span class="muted">${val==null?"?":Math.round(val)} ${unit}</span></div>
+     <button class="btn small ghost" data-refill="${key}">Refilled</button>
+     <div class="bar"><i class="${val<low?"low":""}" style="width:${Math.max(2,Math.min(100,100*(val||0)/max))}%"></i></div></div>`);
+  add("Beans", inv.beans_g, cap.beans_g, "g", "beans", lim.beans_g);
+  (inv.canisters_g||[]).forEach((g,i)=>add(state.canisterNames[i]||"Canister "+(i+1), g, cap.canister_g, "g", "can"+i, lim.canister_g));
+  (inv.syrups_ml||[]).forEach((m,i)=>add((state.syrupNames[i]||"Syrup "+(i+1))+" syrup", m, cap.syrup_ml, "ml", "syr"+i, lim.syrup_ml));
+  Object.keys(inv.cups||{}).sort((a,b)=>a-b).forEach(sz=>add(sz+" oz cups", inv.cups[sz], cap.cups, "left", "cups"+sz, lim.cups));
+  $("stock").innerHTML = rows.join("") || '<p class="muted">No counts yet.</p>';
+  document.querySelectorAll("[data-refill]").forEach(b=>b.onclick=async()=>{
+    const what=b.dataset.refill; let extra={what};
+    if (what.startsWith("cups")) {
+      extra.count = cap.cups;
+      if(!await ask("Refilled "+what.slice(4)+" oz cups?", `Sets the count to ${cap.cups}. Change "cups" under capacity in config.json if your barrels hold a different number.`)) return;
+    } else if(!await ask("Mark as full?", "Sets this count to full. Do it right after refilling.")) return;
+    run("refill", extra);
+  });
+  // test drink
+  const td=$("tDrink"), keep=td.value;
+  td.innerHTML = state.drinks.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("");
+  if (keep && state.drinks.some(d=>d.id===keep)) td.value=keep;
+  const fillSizes=()=>{ const d=state.drinks.find(x=>x.id===td.value)||{sizes:[]}; const ks=$("tSize").value;
+    $("tSize").innerHTML=d.sizes.map(z=>`<option value="${z}">${z} oz</option>`).join(""); if(d.sizes.includes(ks)) $("tSize").value=ks; };
+  td.onchange=fillSizes; fillSizes();
+  $("tGo").onclick=()=>run("testVend",{drink:td.value,size:$("tSize").value});
+  // hours (only redraw when not being edited)
+  if (!$("hours").contains(document.activeElement)) drawHours();
+  // toggles
+  $("freeTxt").textContent = s.testMode ? "On: drinks need no counter code. Tap to turn off." : "Off: customers need a counter code";
+  $("freeBtn").onclick = async()=>{ if(!s.testMode && !await ask("Turn on free mode?","Anyone can get a drink without paying. Use it for testing only.")) return; run(s.testMode?"freeOff":"freeOn"); };
+  const droppers = set.cupMode==="droppers";
+  $("cupTxt").textContent = droppers ? "Printed droppers (v8). Tap to switch to turret." : "Turret. Tap to switch to the printed droppers.";
+  $("cupBtn").onclick = async()=>{ if(await ask("Switch the cup system?", droppers ? "Use the cup turret." : "Use the 3 printed droppers on outputs 23, 24 and 25. No lids.")) run(droppers?"cupsTurret":"cupsDroppers"); };
+  $("moveTxt").textContent = set.moving ? "Ready to move. Tap when it's back in place." : "Turns heaters off so it can cool";
+  $("moveBtn").onclick = async()=>{ if(set.moving){ run("moveOff"); } else if(await ask("Get ready to move?","Heaters, chiller and sales turn off. Wait about 20 minutes before moving it.")) run("moveOn"); };
+  // log
+  $("log").innerHTML = state.log.length ? state.log.map(e=>`<div>${esc(e.message)} <span class="muted">· ${ago(e.at)}</span></div>`).join("") : '<p class="muted">Nothing yet.</p>';
+  $("foot").textContent = "Updated " + new Date().toLocaleTimeString() + (state.low.length ? " · Low: " + state.low.join(", ") : "");
+}
+function drawHours(){
+  const sch=state.schedule; $("hEnabled").setAttribute("aria-checked", !!sch.enabled);
+  const names={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat",sun:"Sun"};
+  $("hours").innerHTML = Object.keys(names).map(d=>{ const x=sch.days[d];
+    return `<div class="hours"><b>${names[d]}</b><button class="switch" role="switch" data-day="${d}" aria-checked="${!!x.on}" aria-label="${names[d]} open"></button>
+      <input type="time" data-open="${d}" value="${x.open}" aria-label="${names[d]} opens"><input type="time" data-close="${d}" value="${x.close}" aria-label="${names[d]} closes"></div>`; }).join("");
+  document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>b.setAttribute("aria-checked", b.getAttribute("aria-checked")!=="true"));
+}
+$("hEnabled").onclick=()=>{ const b=$("hEnabled"); b.setAttribute("aria-checked", b.getAttribute("aria-checked")!=="true"); };
+$("hSave").onclick=async()=>{
+  const sch={enabled:$("hEnabled").getAttribute("aria-checked")==="true", days:{}};
+  document.querySelectorAll("[data-day]").forEach(b=>{ const d=b.dataset.day;
+    sch.days[d]={on:b.getAttribute("aria-checked")==="true", open:document.querySelector(`[data-open=${d}]`).value, close:document.querySelector(`[data-close=${d}]`).value}; });
+  try { const j=await api("/hub/api/schedule", sch); state.schedule=j.schedule; toast("Hours saved"); } catch(e){ if(e.message!=="pin") toast(e.message); }
+};
+
+setInterval(()=>{ if(pin && !document.hidden) load().catch(()=>{}); }, 5000);
+if (pin) { $("pin").value = pin; signIn(); }
+</script>
+</body>
+</html>

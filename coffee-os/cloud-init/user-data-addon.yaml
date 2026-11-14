@@ -1,0 +1,14 @@
+# OPTIONAL: install CoffeeOS with no keyboard and no SSH (Raspberry Pi OS "trixie" images, Nov 2025 or newer).
+#
+# 1. Flash Raspberry Pi OS Lite (64-bit) with Raspberry Pi Imager 2.x. In its settings, set a user name and
+#    password and your HOME or SHOP Wi-Fi (the Pi needs internet for the first boot).
+# 2. Leave the card in your computer. Copy the whole coffee-os folder onto the card's "bootfs" drive.
+# 3. Open the file called user-data on that drive in a text editor. Imager already wrote it.
+#    Add the lines below at the end. If the file already has a "runcmd:" line, add only the "- [...]" lines
+#    under the existing one. Change the name, Wi-Fi name, password and PIN.
+# 4. Put the card in the Pi and power it. First boot takes about 15-20 minutes, then it reboots into the touchscreen.
+
+runcmd:
+  - [bash, -c, "for i in $(seq 90); do curl -fsS --max-time 3 http://deb.debian.org >/dev/null && break; sleep 2; done"]
+  - [bash, /boot/firmware/coffee-os/install.sh, --yes, --name, coffee-01, --machine-ssid, CoffeeMachine-XXXX, --machine-pass, change-me-123, --owner-pin, "000000"]
+  - [reboot]

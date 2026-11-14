@@ -1,0 +1,10 @@
+# local settings with real PINs / Wi-Fi
+config.json
+.env
+# build output
+android-kiosk/.gradle/
+android-kiosk/build/
+android-kiosk/app/build/
+android-kiosk/local.properties
+__pycache__/
+*.pyc

@@ -1,0 +1,6 @@
+[Unit]
+Description=Restart the touchscreen browser once a night (clears browser memory)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart coffee-kiosk.service

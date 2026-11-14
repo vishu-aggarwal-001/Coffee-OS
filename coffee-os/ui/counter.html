@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6A42">
+<title>Coffee counter</title>
+<style>
+:root{--paper:#F5F7F6;--card:#fff;--ink:#12261C;--soft:#5B6B63;--line:#DCE3DF;--green:#0F6A42;--green-2:#E3F1E9;--amber:#F6B800;--amber-2:#FFF4CC;--red:#C8392B;
+  --display:"Roboto Condensed","sans-serif-condensed","Arial Narrow",sans-serif;--body:Roboto,"Noto Sans",system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.top{position:sticky;top:0;z-index:3;background:var(--green);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 12px;display:flex;align-items:center;gap:12px}
+.top h1{font-family:var(--display);font-size:24px;margin:0;flex:1}
+.state{font-size:14px;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.18)}
+.state.bad{background:var(--amber);color:var(--ink)}
+main{max-width:980px;margin:0 auto;padding:16px}
+h2{font-family:var(--display);font-size:24px;margin:8px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.drink{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.drink b{display:block;font-size:17px;margin-bottom:8px}
+.drink.cold b:after{content:" (chilled)";font-weight:400;color:var(--soft);font-size:14px}
+.sizes{display:flex;gap:8px}
+.sizes button{flex:1;border:0;border-radius:10px;background:var(--green);color:#fff;padding:10px 4px;min-height:58px;line-height:1.15}
+.sizes button span{display:block;font-size:13px;opacity:.85}
+.sizes button:disabled{background:#C9D2CD}
+.codes{list-style:none;padding:0;margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.codes li{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.codes li:first-child{border-top:0}
+.codes .c{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:2px;width:84px}
+.codes .g{flex:1}
+.x{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px}
+.muted{color:var(--soft)}
+.modal{position:fixed;inset:0;background:rgba(10,30,20,.55);display:grid;place-items:center;padding:20px;z-index:5}
+.sheet{background:#fff;border-radius:22px;padding:28px;max-width:420px;width:100%;text-align:center}
+.big{font-family:var(--display);font-weight:700;font-size:110px;letter-spacing:10px;line-height:1;margin:8px 0;color:var(--green)}
+.charge{display:inline-block;background:var(--amber-2);border-radius:12px;padding:10px 16px;font-size:20px;margin:8px 0 18px}
+.btn{border:0;border-radius:12px;padding:14px 18px;font-weight:600;background:var(--green);color:#fff;width:100%;min-height:52px}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login .sheet{text-align:left}
+input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:28px;letter-spacing:8px;text-align:center}
+label{display:block;color:var(--soft);font-size:14px;margin:12px 0 4px}
+.water{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:4px 0 14px}
+.water.bad{background:var(--amber-2);border-color:var(--amber)}
+.water .g{flex:1}
+.water .btn{width:auto;min-height:44px;padding:10px 16px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="loginView" class="login"><div class="sheet">
+  <h2 style="margin-top:0">Coffee counter</h2>
+  <p class="muted">For cashiers. Take payment at the register, then make a code for the customer's drink.</p>
+  <label for="pin">Counter PIN</label><input id="pin" type="password" inputmode="numeric" maxlength="12">
+  <p id="err" style="color:var(--red)" hidden></p>
+  <button class="btn" id="go" style="margin-top:14px">Open counter</button>
+</div></div>
+
+<div id="app" hidden>
+  <div class="top"><h1>Coffee counter</h1><span class="state" id="state"></span></div>
+  <main>
+    <div class="water" id="water" hidden><div class="g"><b id="wTitle">Water bottles</b><div class="muted" id="wText"></div></div><button class="btn" id="wSwap">Bottles swapped</button></div>
+    <h2>Make a code after taking payment</h2>
+    <div class="grid" id="grid"></div>
+    <h2 style="margin-top:24px">Codes not used yet</h2>
+    <ul class="codes" id="codes"></ul>
+    <p class="muted">Codes work once and expire after a day. If a drink fails, the customer's code keeps working.</p>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden><div class="sheet" role="dialog" aria-live="assertive">
+  <div class="muted" id="mDrink"></div>
+  <div class="big" id="mCode"></div>
+  <div class="charge" id="mCharge"></div>
+  <p class="muted" style="margin-top:0">Write the code on the receipt or tell the customer. They type it on the machine.</p>
+  <button class="btn" id="mDone">Done</button>
+</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const base = location.protocol.startsWith("http") ? location.origin : "http://192.168.4.1";
+let pin = sessionStorage.getItem("counterPin") || "", data = null;
+
+async function req(path, body){
+  const r = await fetch(base + path, body ? {method:"POST", headers:{"Content-Type":"application/json","X-Counter-Pin":pin}, body:JSON.stringify(body)} : {headers:{"X-Counter-Pin":pin}});
+  const j = await r.json().catch(()=>({}));
+  if (r.status === 401){ sessionStorage.removeItem("counterPin"); $("app").hidden = true; $("loginView").hidden = false; throw new Error("Wrong PIN"); }
+  if (!r.ok || j.ok === false) throw new Error(j.error || "The machine did not accept that.");
+  return j;
+}
+async function refresh(){
+  try { data = await req("/api/counter/list"); render(); } catch(e){ $("state").textContent = e.message; $("state").className = "state bad"; }
+}
+function renderWater(){
+  const w = data.water || {};
+  $("water").hidden = !w.bottled;
+  if (!w.bottled) return;
+  const bad = w.empty || w.low;
+  $("water").className = "water" + (bad ? " bad" : "");
+  $("wTitle").textContent = w.empty ? "Out of water: change the bottles" : w.low ? "Water is running low" : "Water bottles";
+  $("wText").textContent = w.empty
+    ? "Put in 2 full 3-gallon bottles, move the draw tubes over, then press Bottles swapped."
+    : (w.sensors ? "Sensors are watching both bottles." : `About ${Math.round((w.ml||0)/1000*10)/10} liters left. After putting in 2 full bottles, press Bottles swapped.`);
+}
+async function swapBottles(){
+  if (!confirm("Did you put in 2 full bottles and move the draw tubes over?")) return;
+  try { const r = await req("/api/counter/bottles", {}); data.water = r.water; renderWater(); refresh(); alert("Thanks! The machine knows it has full bottles."); }
+  catch(e){ alert(e.message); }
+}
+function render(){
+  renderWater();
+  const m = data.menu;
+  $("state").textContent = data.freeMode ? "Free mode: no codes needed" : (m.open ? "Machine ready" : "Machine not ready: " + (m.reason || ""));
+  $("state").className = "state" + ((m.open && !data.freeMode) ? "" : " bad");
+  $("grid").innerHTML = m.drinks.map(d=>`<div class="drink ${d.temp==="cold"?"cold":""}"><b>${esc(d.name)}</b><div class="sizes">${
+    Object.keys(d.prices).sort((a,b)=>a-b).map(s=>`<button data-d="${esc(d.id)}" data-s="${s}" ${d.available[s]===true?"":"disabled"}>${s} oz<span>$${Number(d.prices[s]).toFixed(2)}</span></button>`).join("")}</div></div>`).join("");
+  $("grid").querySelectorAll("button").forEach(b=>b.onclick=()=>make(b.dataset.d, b.dataset.s));
+  $("codes").innerHTML = (data.codes||[]).slice().reverse().map(c=>`<li><span class="c">${esc(c.code)}</span><span class="g">${esc(c.name)}, ${esc(c.size)} oz<div class="muted">$${Number(c.price).toFixed(2)}</div></span><button class="x" data-c="${esc(c.code)}">Cancel</button></li>`).join("")
+    || `<li class="muted">No open codes.</li>`;
+  $("codes").querySelectorAll("[data-c]").forEach(b=>b.onclick=async()=>{ if(!confirm(`Cancel code ${b.dataset.c}? Refund the customer at the register.`)) return; await req("/api/counter/cancel",{code:b.dataset.c}); refresh(); });
+}
+async function make(drink, size){
+  const d = data.menu.drinks.find(x=>x.id===drink);
+  try {
+    const r = await req("/api/counter/create", {drink, size});
+    $("mDrink").textContent = `${d.name}, ${size} oz`; $("mCode").textContent = r.code;
+    $("mCharge").textContent = `Charge $${Number(d.prices[size]).toFixed(2)}`;
+    $("modal").hidden = false; refresh();
+  } catch(e){ alert(e.message); }
+}
+$("mDone").onclick = ()=>{ $("modal").hidden = true; };
+$("wSwap").onclick = swapBottles;
+$("go").onclick = async()=>{ pin = $("pin").value.trim(); $("err").hidden = true;
+  try { await req("/api/counter/list"); sessionStorage.setItem("counterPin", pin); $("loginView").hidden = true; $("app").hidden = false; refresh(); setInterval(refresh, 10000); }
+  catch(e){ $("err").textContent = e.message; $("err").hidden = false; } };
+$("pin").addEventListener("keydown", e=>{ if(e.key==="Enter") $("go").click(); });
+if (pin){ $("pin").value = pin; $("go").click(); }
+</script>
+</body>
+</html>

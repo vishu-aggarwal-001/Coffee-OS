@@ -1,0 +1,59 @@
+#!/bin/bash
+# coffee: run the control-page buttons from the Pi's terminal (or over SSH).
+#   coffee status            what the machine is doing, stock, today's sales
+#   coffee open | close      start or stop sales (heaters stay on)
+#   coffee rinse | prime | swap | clear | unlock | stop | restart
+#   coffee test latte 12     make a free test drink
+#   coffee refill beans      also: can1..can4, syrup1, syrup2, cups10, cups12, cups16
+#   coffee log               the last things that happened
+# Reads the PIN from /etc/coffee-hub/config.json (run with sudo), or set COFFEE_PIN.
+HUB=${COFFEE_HUB:-http://127.0.0.1:8000}
+CONF=${COFFEE_HUB_CONFIG:-/etc/coffee-hub/config.json}
+if [ -z "$COFFEE_PIN" ]; then
+  COFFEE_PIN=$(python3 -c "import json,sys;c=json.load(open(sys.argv[1]));print(c.get('hub_pin') or c.get('owner_pin',''))" "$CONF" 2>/dev/null) ||
+    { echo "Can't read $CONF. Run with sudo, or set COFFEE_PIN."; exit 1; }
+fi
+
+post() {   # post ACTION [extra json]
+  curl -sS --max-time 15 -H "X-Hub-Pin: $COFFEE_PIN" -H "Content-Type: application/json" \
+    -d "{\"action\":\"$1\"${2:+,$2}}" "$HUB/hub/api/control" |
+    python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('message') or 'Failed: '+str(d.get('error')));sys.exit(0 if d.get('ok') else 1)"
+}
+
+case "$1" in
+  status|"")
+    curl -sS --max-time 15 -H "X-Hub-Pin: $COFFEE_PIN" "$HUB/hub/api/control/state" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+if d.get("ok") is False: sys.exit("Failed: " + str(d.get("error")))
+s, h = d.get("summary") or {}, d["health"]; st = s.get("settings") or {}
+state = ("CONTROLLER NOT ANSWERING" if not h["online"] else "STOPPED: " + s["faults"] if s.get("faults")
+         else "READY TO MOVE" if st.get("moving") else "CLOSED" if st.get("paused")
+         else "SELLING" if s.get("selling") else (s.get("blockedReason") or "NOT SELLING"))
+name, fw, today = h["name"], h.get("firmware"), d["today"]
+print("%s: %s   firmware %s" % (name, state, fw))
+t = s.get("temps") or {}
+print("  espresso %s C, hot water %s C, cabinet %s C" % (t.get("espresso"), t.get("boiler"), t.get("cabinet")))
+print("  today %d drinks, $%.2f" % (today["count"], today["cents"] / 100))
+inv = s.get("inventory") or {}
+print("  beans %s g, canisters %s g, syrups %s ml, cups %s" % (inv.get("beans_g"), inv.get("canisters_g"), inv.get("syrups_ml"), inv.get("cups")))
+if d["low"]: print("  LOW: " + ", ".join(d["low"]))
+sch = d["schedule"]
+print("  opening hours " + ("on" if sch["enabled"] else "off"))
+' ;;
+  open|close|rinse|prime|restart) post "$1" ;;
+  swap)   post bottlesSwapped ;;
+  clear)  post clearFaults ;;
+  unlock) post unlockDoor ;;
+  stop)   post cancel ;;
+  test)   [ -n "$2" ] || { echo "Usage: coffee test DRINK [SIZE]   (drink ids are in the owner app, e.g. latte)"; exit 1; }
+          post testVend "\"drink\":\"$2\",\"size\":\"${3:-12}\"" ;;
+  refill) case "$2" in
+            beans) w=beans ;; can[1-4]) w="can$(( ${2#can} - 1 ))" ;; syrup[1-2]) w="syr$(( ${2#syrup} - 1 ))" ;;
+            cups*) w="$2" ;; *) echo "Usage: coffee refill beans|can1..can4|syrup1|syrup2|cups10|cups12|cups16"; exit 1 ;;
+          esac
+          post refill "\"what\":\"$w\"" ;;
+  log)    curl -sS --max-time 15 -H "X-Hub-Pin: $COFFEE_PIN" "$HUB/hub/api/control/state" |
+            python3 -c 'import json,sys,time;[print(time.strftime("%m-%d %H:%M",time.localtime(e["at"])),e["message"]) for e in json.load(sys.stdin)["log"]]' ;;
+  *) sed -n 2,9p "$0" | sed 's/^# \{0,1\}//' ; exit 1 ;;
+esac

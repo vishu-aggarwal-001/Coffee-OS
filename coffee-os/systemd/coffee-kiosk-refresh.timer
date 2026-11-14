@@ -1,0 +1,9 @@
+[Unit]
+Description=Nightly touchscreen refresh at 3:40 am (after the 3 am rinse)
+
+[Timer]
+OnCalendar=*-*-* 03:40:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+<resources>
+    <color name="sign_green">#0A3D27</color>
+    <color name="launcher_bg">#0F6A42</color>
+    <style name="KioskTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/sign_green</item>
+        <item name="android:statusBarColor">@color/sign_green</item>
+        <item name="android:navigationBarColor">@color/sign_green</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

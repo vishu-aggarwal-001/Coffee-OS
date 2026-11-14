@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6A42">
+<title>Coffee Hub</title>
+<style>
+:root{
+  --paper:#F5F7F6; --card:#FFFFFF; --ink:#12261C; --soft:#5B6B63; --line:#DCE3DF;
+  --green:#0F6A42; --green-2:#E3F1E9; --amber:#F6B800; --amber-2:#FFF4CC; --red:#C8392B; --red-2:#FBE5E2;
+  --display:"Roboto Condensed","sans-serif-condensed","Arial Narrow",sans-serif;
+  --body:Roboto,"Noto Sans",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{--paper:#0E1713; --card:#15211B; --ink:#E7EFEA; --soft:#9DB0A6; --line:#26362E; --green-2:#14301F; --amber-2:#3A3010; --red-2:#3B1A16}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.top{position:sticky;top:0;z-index:5;background:var(--green);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 14px;display:flex;align-items:center;gap:12px}
+.top h1{font-family:var(--display);font-size:24px;margin:0;flex:1;line-height:1.1}
+.top small{display:block;font:14px var(--body);opacity:.85}
+.top a,.top button{color:#fff;background:rgba(255,255,255,.14);border:0;border-radius:10px;padding:8px 12px;text-decoration:none;font-size:14px}
+main{padding:16px;max-width:860px;margin:0 auto}
+h2{font-family:var(--display);font-size:26px;margin:18px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.status.ok{border-color:#B9DCC8;background:var(--green-2)}
+.status.warn{border-color:#F1D57A;background:var(--amber-2)}
+.status.bad{border-color:#EDB2AA;background:var(--red-2)}
+.status b{font-family:var(--display);font-size:22px;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat span{color:var(--soft);font-size:14px}
+.stat b{display:block;font-family:var(--display);font-size:30px;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;font-size:15px}
+th{color:var(--soft);font-weight:500}
+td.n,th.n{text-align:right}
+.bars{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:8px}
+.bars div{flex:1;background:var(--green);border-radius:4px 4px 0 0;min-height:2px;position:relative}
+.bars div:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:3px 6px;border-radius:6px;font-size:12px;white-space:nowrap}
+.muted{color:var(--soft);font-size:14px}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:13px;background:var(--green-2)}
+.pill.bad{background:var(--red-2)} .pill.warn{background:var(--amber-2)}
+.btn{background:var(--green);color:#fff;border:0;border-radius:12px;padding:10px 16px}
+.btn.ghost{background:transparent;color:var(--green);border:1px solid var(--line)}
+#login{max-width:360px;margin:12vh auto;text-align:center}
+#login input{width:100%;font-size:28px;text-align:center;letter-spacing:.3em;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);margin:12px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hide{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;opacity:0;transition:.2s;pointer-events:none}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1 id="title">Coffee Hub<small id="sub">Machine dashboard</small></h1>
+  <a href="/control">Control</a>
+  <a href="/owner">Owner app</a>
+  <button id="out" class="hide">Sign out</button>
+</div>
+
+<section id="login" class="card">
+  <h2>Hub PIN</h2>
+  <p class="muted">Same as the owner PIN unless you set a separate hub PIN.</p>
+  <form id="lf"><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="PIN"><button class="btn" style="width:100%">Open</button></form>
+  <p id="lerr" class="muted"></p>
+</section>
+
+<main id="app" class="hide">
+  <div id="status" class="card status"></div>
+  <div class="grid">
+    <div class="stat"><span>Drinks today</span><b id="sToday">-</b></div>
+    <div class="stat"><span>Sales today</span><b id="sTodayRev">-</b></div>
+    <div class="stat"><span id="lPeriod">Last 30 days</span><b id="sPeriod">-</b></div>
+    <div class="stat"><span>All time</span><b id="sAll">-</b></div>
+  </div>
+
+  <h2>Drinks per day</h2>
+  <div class="card"><div id="bars" class="bars"></div><p class="muted" id="barsNote"></p></div>
+
+  <h2>Best sellers</h2>
+  <div class="card"><table id="drinks"></table></div>
+
+  <div id="fleetWrap" class="hide">
+    <h2>All machines</h2>
+    <div class="card"><table id="fleet"></table></div>
+  </div>
+
+  <h2>What happened</h2>
+  <div class="card"><table id="events"></table></div>
+
+  <div class="row" style="margin:18px 0 40px">
+    <a class="btn" id="dl" href="#">Download all sales (CSV)</a>
+    <button class="btn ghost" id="sync">Copy sales now</button>
+    <button class="btn ghost" id="alert">Send a test alert</button>
+  </div>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let pin = sessionStorage.getItem("hubPin") || "";
+const money = c => "$" + (c/100).toFixed(2);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),3000); }
+
+async function call(path, method="GET"){
+  const r = await fetch(path, {method, headers:{"X-Hub-Pin":pin}});
+  if (r.status === 401 || r.status === 429){ const j = await r.json().catch(()=>({})); signOut(j.error || "Wrong PIN"); throw new Error(j.error); }
+  if (path.endsWith(".csv")) return r.blob();
+  const j = await r.json(); if (!r.ok || j.ok === false) throw new Error(j.error || "Failed"); return j;
+}
+function signOut(msg){ pin=""; sessionStorage.removeItem("hubPin"); $("app").classList.add("hide"); $("out").classList.add("hide"); $("login").classList.remove("hide"); $("lerr").textContent = msg||""; }
+$("lf").onsubmit = async e => { e.preventDefault(); pin = $("pin").value.trim(); try { await load(); sessionStorage.setItem("hubPin", pin); } catch(_){} };
+$("out").onclick = () => signOut("");
+
+function statusCard(h){
+  const el = $("status");
+  let cls="ok", head="Selling", msg="Everything looks normal.";
+  if (!h.online){ cls="bad"; head="Controller not answering"; msg = h.lastContactSec!=null ? `Last heard ${Math.round(h.lastContactSec/60)} min ago. Check power and the machine's Wi-Fi.` : "The hub hasn't reached the controller yet."; }
+  else if (h.faults){ cls="bad"; head="Not selling"; msg=h.faults; }
+  else if (h.water){ cls="warn"; head=`Water ${h.water}`; msg="Put in 2 full bottles and press Bottles swapped on the counter screen."; }
+  else if (h.selling===false){ cls="warn"; head="Not selling"; msg="The machine is warming up or closed."; }
+  if (h.pinRejected) msg += " The hub's owner PIN is out of date, so sales copying and alerts are paused.";
+  else if (!h.watching) msg += " Add owner_pin to the hub config to copy sales and get fault alerts.";
+  el.className = "card status " + cls;
+  el.innerHTML = `<b>${esc(head)}</b><div>${esc(msg)}</div><div class="muted" style="margin-top:6px">Firmware ${esc(h.firmware||"?")} · hub ${esc(h.hub)} · hub up ${Math.round(h.hubUptimeMin/60)} h · ${esc(h.time)}</div>`;
+}
+
+async function load(){
+  const r = await call("/hub/api/report?days=30");
+  $("login").classList.add("hide"); $("app").classList.remove("hide"); $("out").classList.remove("hide");
+  const h = r.health; $("title").firstChild.textContent = h.name + " "; $("sub").textContent = "Coffee Hub";
+  statusCard(h);
+  const today = new Date().toLocaleDateString("en-CA");
+  const t = r.byDay.find(d=>d.day===today) || {count:0,cents:0};
+  $("sToday").textContent = t.count; $("sTodayRev").textContent = money(t.cents);
+  const p = r.byDay.reduce((a,d)=>({count:a.count+d.count,cents:a.cents+d.cents}),{count:0,cents:0});
+  $("sPeriod").textContent = `${p.count} · ${money(p.cents)}`; $("sAll").textContent = `${r.allTime.count} · ${money(r.allTime.cents)}`;
+  // last 30 days, including empty days
+  const days=[]; for(let i=29;i>=0;i--){ const d=new Date(Date.now()-i*864e5).toLocaleDateString("en-CA"); days.push(r.byDay.find(x=>x.day===d)||{day:d,count:0,cents:0}); }
+  const max = Math.max(1,...days.map(d=>d.count));
+  $("bars").innerHTML = days.map(d=>`<div style="height:${d.count/max*100}%" data-t="${d.day}: ${d.count} (${money(d.cents)})"></div>`).join("");
+  $("barsNote").textContent = r.failed ? `${r.failed} drink(s) failed in this period; customers' codes stayed valid.` : "Dates are when the hub copied the sale.";
+  $("drinks").innerHTML = "<tr><th>Drink</th><th class=n>Cups</th><th class=n>Sales</th></tr>" +
+    (r.byDrink.map(d=>`<tr><td>${esc(d.drink)}</td><td class=n>${d.count}</td><td class=n>${money(d.cents)}</td></tr>`).join("") || "<tr><td colspan=3 class=muted>No sales copied yet.</td></tr>");
+  $("events").innerHTML = "<tr><th>When</th><th>What</th></tr>" +
+    (r.events.map(e=>`<tr><td class=muted>${new Date(e.at*1000).toLocaleString()}</td><td><span class="pill ${/fault|offline|config/.test(e.kind)?"bad":/water|moving/.test(e.kind)?"warn":""}">${esc(e.kind)}</span> ${esc(e.message)}</td></tr>`).join("") || "<tr><td colspan=2 class=muted>Nothing yet.</td></tr>");
+  loadFleet();
+}
+
+async function loadFleet(){
+  try {
+    const f = await call("/hub/api/fleet");
+    if (f.machines.length < 2) return;
+    $("fleetWrap").classList.remove("hide");
+    $("fleet").innerHTML = "<tr><th>Machine</th><th>State</th><th class=n>Today</th></tr>" + f.machines.map(m => {
+      const st = m.error ? `<span class="pill bad">${esc(m.error)}</span>` : !m.online ? `<span class="pill bad">Offline</span>` :
+        m.faults ? `<span class="pill bad">${esc(m.faults)}</span>` : m.water ? `<span class="pill warn">Water ${esc(m.water)}</span>` : `<span class="pill">Selling</span>`;
+      const link = m.url && m.url.startsWith("http") ? `<a href="${esc(m.url)}/hub">${esc(m.name)}</a>` : esc(m.name);
+      return `<tr><td>${link}</td><td>${st}</td><td class=n>${m.today ? `${m.today.count} · ${money(m.today.cents)}` : "-"}</td></tr>`;
+    }).join("");
+  } catch(_){}
+}
+
+$("dl").onclick = async e => { e.preventDefault(); try { const b = await call("/hub/api/sales.csv"); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="sales.csv"; a.click(); } catch(err){ toast(err.message); } };
+$("sync").onclick = async () => { try { const r = await call("/hub/api/sync","POST"); toast(r.added ? `Copied ${r.added} new sale(s)` : "No new sales (or the machine is busy)"); load(); } catch(err){ toast(err.message); } };
+$("alert").onclick = async () => { try { await call("/hub/api/test-alert","POST"); toast("Sent. Check your phone."); } catch(err){ toast(err.message); } };
+
+if (pin) load().catch(()=>{});
+setInterval(()=>{ if (pin && !$("app").classList.contains("hide")) load().catch(()=>{}); }, 60000);
+</script>
+</body>
+</html>

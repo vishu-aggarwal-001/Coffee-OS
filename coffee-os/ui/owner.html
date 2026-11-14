@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6A42">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/owner.webmanifest">
+<title>Machine owner</title>
+<style>
+:root{
+  --paper:#F5F7F6; --card:#FFFFFF; --ink:#12261C; --soft:#5B6B63; --line:#DCE3DF;
+  --green:#0F6A42; --green-2:#E3F1E9; --amber:#F6B800; --amber-2:#FFF4CC; --red:#C8392B; --red-2:#FBE5E2;
+  --display:"Roboto Condensed","sans-serif-condensed","Arial Narrow",sans-serif;
+  --body:Roboto,"Noto Sans",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.top{position:sticky;top:0;z-index:5;background:var(--green);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 14px;display:flex;align-items:center;gap:12px}
+.top h1{font-family:var(--display);font-size:24px;margin:0;flex:1;line-height:1.1}
+.top small{display:block;font:14px var(--body);opacity:.85}
+.dot{width:12px;height:12px;border-radius:50%;background:#7CE0A6;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+.dot.bad{background:var(--amber)}
+main{padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 96px);max-width:720px;margin:0 auto}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px 4px calc(env(safe-area-inset-bottom,0px) + 6px)}
+nav button{border:0;background:none;padding:8px 2px;font-size:13px;color:var(--soft);display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:12px}
+nav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav button[aria-current=page]{color:var(--green);background:var(--green-2);font-weight:600}
+h2{font-family:var(--display);font-size:28px;margin:6px 0 12px}
+h3{font-size:17px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.status{display:flex;gap:12px;align-items:flex-start}
+.status.ok{border-color:#B9DCC8;background:var(--green-2)}
+.status.warn{border-color:#F1D57A;background:var(--amber-2)}
+.status.bad{border-color:#EDB2AA;background:var(--red-2)}
+.big{font-family:var(--display);font-size:40px;line-height:1;margin:0}
+.muted{color:var(--soft)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.grow{flex:1;min-width:0}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;background:var(--green);color:#fff;min-height:46px}
+.btn.alt{background:#fff;color:var(--green);box-shadow:inset 0 0 0 2px var(--green)}
+.btn.warn{background:var(--red)}
+.btn.small{padding:8px 12px;min-height:38px;font-size:15px}
+.btn:disabled{opacity:.5}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+label{display:block;font-size:14px;color:var(--soft);margin:12px 0 4px}
+input[type=text],input[type=number],input[type=password],select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-height:46px}
+input[type=number]{font-variant-numeric:tabular-nums}
+.switch{position:relative;width:52px;height:30px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:#C9D2CD;border-radius:30px;transition:.2s}
+.switch span:before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--green)}
+.switch input:checked+span:before{transform:translateX(22px)}
+.meter{height:8px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--green)}
+.meter.low i{background:var(--amber)}.meter.empty i{background:var(--red)}
+.step{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#FBFCFB}
+.step .head{display:flex;gap:8px;align-items:center}
+.step .head select{flex:1}
+.icon{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-size:18px}
+.chart{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:10px}
+.chart div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--soft)}
+.chart b{display:block;width:100%;background:var(--green);border-radius:6px 6px 2px 2px;min-height:3px}
+.chart div.today b{background:var(--amber)}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login .card{width:100%;max-width:380px}
+.pin{font-size:28px;letter-spacing:8px;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;
+  opacity:0;pointer-events:none;transition:opacity .25s;z-index:10;max-width:92vw}
+.toast.on{opacity:1}
+.tag{font-size:13px;padding:3px 9px;border-radius:99px;background:var(--green-2);color:var(--green);font-weight:600;white-space:nowrap}
+.tag.off{background:#ECEFED;color:var(--soft)}
+.tag.cold{background:#E3EEF8;color:#245C8A}
+.back{background:none;border:0;color:#fff;font-size:26px;padding:0 6px 0 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="loginView" class="login">
+  <div class="card">
+    <h2 style="margin-top:0">Machine owner</h2>
+    <p class="muted">Enter the owner PIN to manage drinks, prices, stock and settings.</p>
+    <label for="addr">Machine address</label>
+    <input id="addr" type="text" inputmode="url" placeholder="http://192.168.4.1">
+    <label for="pin">PIN</label>
+    <input id="pin" class="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12">
+    <p id="loginErr" style="color:var(--red)" hidden></p>
+    <button class="btn" id="loginBtn" style="width:100%;margin-top:16px">Sign in</button>
+  </div>
+</div>
+
+<div id="appView" hidden>
+  <div class="top"><button class="back" id="backBtn" hidden aria-label="Back">&larr;</button><h1 id="topTitle">Today<small id="topSub"></small></h1><span class="dot" id="dot"></span></div>
+  <main id="main"></main>
+  <nav id="nav">
+    <button data-tab="today"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Today</button>
+    <button data-tab="drinks"><svg viewBox="0 0 24 24"><path d="M5 8h12l-1.5 12h-9z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2.4"/><path d="M9 3c-1 1.5 1 2.5 0 4M13 3c-1 1.5 1 2.5 0 4"/></svg>Drinks</button>
+    <button data-tab="stock"><svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>Stock</button>
+    <button data-tab="machine"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Machine</button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings</button>
+  </nav>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money = c => "$" + (c/100).toFixed(2);
+const SIZES = ["10","12","16"];
+const CAP = {water_ml:22700, beans_g:1500, canister:2500, syrup:1000, cups:{"10":36,"12":72,"16":72}, lids:180};
+let base = localStorage.getItem("ownerBase") || (location.protocol.startsWith("http") ? location.origin : "http://192.168.4.1");
+let pin = sessionStorage.getItem("ownerPin") || "";
+let tab = "today", sum = null, rec = null, editing = null, refreshTimer = null;
+
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("on"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("on"),3200); }
+async function req(path, method="GET", body){
+  const opt = {method, headers:{"X-Admin-Pin":pin}};
+  if (body !== undefined){ opt.headers["Content-Type"]="application/json"; opt.body = typeof body==="string" ? body : JSON.stringify(body); }
+  let r; try { r = await fetch(base + path, opt); } catch(e){ throw new Error("Can't reach the machine. Check you're on its Wi-Fi or the store Wi-Fi."); }
+  if (path.endsWith(".csv")) { if(!r.ok) throw new Error("Download failed"); return r.text(); }
+  const j = await r.json().catch(()=>({}));
+  if (r.status === 401){ signOut("Wrong PIN"); throw new Error("Wrong PIN"); }
+  if (!r.ok || j.ok === false) throw new Error(j.error || "The machine did not accept that.");
+  return j;
+}
+async function act(action, extra={}){ try{ await req("/api/admin/action","POST",{action,...extra}); return true; } catch(e){ toast(e.message); return false; } }
+
+/* ---------------- sign in ---------------- */
+$("addr").value = base;
+$("loginBtn").onclick = async ()=>{
+  base = $("addr").value.trim().replace(/\/$/,"") || base; pin = $("pin").value.trim();
+  $("loginErr").hidden = true;
+  try { sum = await req("/api/admin/summary"); rec = await req("/api/admin/recipes");
+        localStorage.setItem("ownerBase", base); sessionStorage.setItem("ownerPin", pin); startApp(); }
+  catch(e){ $("loginErr").textContent = e.message; $("loginErr").hidden = false; }
+};
+$("pin").addEventListener("keydown", e=>{ if(e.key==="Enter") $("loginBtn").click(); });
+function signOut(msg){ sessionStorage.removeItem("ownerPin"); pin=""; $("appView").hidden=true; $("loginView").hidden=false; if(msg){ $("loginErr").textContent=msg; $("loginErr").hidden=false; } }
+
+function startApp(){
+  $("loginView").hidden = true; $("appView").hidden = false;
+  document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{ editing=null; go(b.dataset.tab); });
+  go("today");
+  clearInterval(refreshTimer); refreshTimer = setInterval(async()=>{ if(tab==="today"||tab==="machine"){ try{ sum = await req("/api/admin/summary"); if(!editing) render(); }catch(e){} } }, 8000);
+}
+function go(t){ tab=t; document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current", b.dataset.tab===t ? "page" : "false")); render(); window.scrollTo(0,0); }
+async function reload(){ sum = await req("/api/admin/summary"); rec = await req("/api/admin/recipes"); render(); }
+
+function setTop(title, sub, back){
+  $("topTitle").innerHTML = esc(title) + (sub ? `<small>${esc(sub)}</small>` : "");
+  $("backBtn").hidden = !back; $("backBtn").onclick = back || null;
+  $("dot").classList.toggle("bad", !(sum && sum.selling));
+}
+function render(){
+  if (editing) return renderEditor();
+  ({today:renderToday, drinks:renderDrinks, stock:renderStock, machine:renderMachine, settings:renderSettings})[tab]();
+}
+const drinkName = id => (rec.drinks.find(d=>d.id===id)||{}).name || id;
+
+/* ---------------- today ---------------- */
+function renderToday(){
+  setTop(rec.brand?.name || "Today", sum.wifi?.ap || "");
+  const days = Object.entries(sum.stats.days||{}).sort().slice(-7);
+  const todayKey = (sum.time||"").slice(0,10);
+  const t = (sum.stats.days||{})[todayKey] || {count:0,revenueCents:0};
+  const max = Math.max(1, ...days.map(([,d])=>d.revenueCents));
+  const top = Object.entries(sum.stats.perDrink||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const st = sum.selling ? "ok" : (/heat/i.test(sum.blockedReason||"") ? "warn" : "bad");
+  const phase = sum.status?.phase;
+  $("main").innerHTML = `
+    <div class="card status ${st}">
+      <div class="grow"><h3>${sum.selling ? "Selling" : "Not selling"}</h3>
+      <div class="muted">${esc(sum.selling ? (phase && phase!=="idle" ? "Making a "+(sum.status.drink||"drink")+" now" : "Ready for customers") : (sum.blockedReason||""))}</div>
+      ${sum.testMode ? `<div style="margin-top:6px"><span class="tag" style="background:var(--amber-2);color:#7A5A00">Free mode is on: drinks start without a counter code</span></div>` : ""}</div>
+      ${sum.faults ? `<button class="btn small" id="clr">Clear faults</button>` : ""}
+    </div>
+    ${sum.faults ? `<div class="card"><h3>Needs attention</h3><ul class="list">${sum.faults.split("; ").map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div>` : ""}
+    <div class="two">
+      <div class="card"><div class="muted">Sales today</div><p class="big">${money(t.revenueCents)}</p></div>
+      <div class="card"><div class="muted">Drinks today</div><p class="big">${t.count}</p></div>
+    </div>
+    <div class="card row"><div><h3 style="margin:0">Counter codes not used yet</h3><div class="muted">Paid at the counter, drink not made yet</div></div><p class="big">${(sum.openCodes||[]).length}</p></div>
+    <div class="card"><div class="row"><h3>Last 7 days</h3><span class="muted">${money(days.reduce((a,[,d])=>a+d.revenueCents,0))}</span></div>
+      <div class="chart">${days.map(([k,d])=>`<div class="${k===todayKey?"today":""}"><b style="height:${Math.round(d.revenueCents/max*96)}px"></b>${new Date(k+"T12:00").toLocaleDateString([], {weekday:"short"})}</div>`).join("") || `<p class="muted">No sales yet.</p>`}</div></div>
+    <div class="card"><h3>Best sellers</h3><ul class="list">${top.map(([id,n])=>`<li><span class="grow">${esc(drinkName(id))}</span><b>${n}</b></li>`).join("") || `<li class="muted">No sales yet.</li>`}</ul></div>
+    <div class="card"><h3>Temperatures</h3><div class="two">
+      ${[["Espresso heater","espresso"],["Hot water","boiler"],...(sum.settings.chiller?[["Chilled water","cold"]]:[]),["Inside cabinet","cabinet"]].map(([n,k])=>`<div><div class="muted">${n}</div><b style="font-size:20px">${sum.temps[k]==null?"Probe fault":Math.round(sum.temps[k])+" °C"}</b></div>`).join("")}
+    </div></div>`;
+  const c = $("clr"); if (c) c.onclick = async()=>{ if(await act("clearFaults")){ toast("Faults cleared"); reload(); } };
+}
+
+/* ---------------- drinks ---------------- */
+function renderDrinks(){
+  setTop("Drinks", `${rec.drinks.filter(d=>d.enabled!==false).length} on the menu`);
+  $("main").innerHTML = `
+    <div class="card"><ul class="list">${rec.drinks.map((d,i)=>`
+      <li><button data-i="${i}" class="grow edit" style="all:unset;cursor:pointer;flex:1;min-width:0">
+        <b>${esc(d.name)}</b> ${d.temp==="cold"?`<span class="tag cold">Chilled</span>`:""}
+        <div class="muted">${SIZES.filter(s=>d.prices?.[s]!=null).map(s=>`${s} oz $${Number(d.prices[s]).toFixed(2)}`).join(" · ")}</div></button>
+        <label class="switch" aria-label="Show ${esc(d.name)} on the menu"><input type="checkbox" data-t="${i}" ${d.enabled!==false?"checked":""}><span></span></label></li>`).join("")}</ul></div>
+    <div class="btns"><button class="btn" id="add">Add a drink</button></div>
+    <p class="muted">Turn a drink off to hide it from customers. Changes go live as soon as they save.</p>`;
+  document.querySelectorAll(".edit").forEach(b=>b.onclick=()=>{ editing = {i:+b.dataset.i, d:structuredClone(rec.drinks[+b.dataset.i])}; render(); });
+  document.querySelectorAll("[data-t]").forEach(c=>c.onchange=async()=>{ rec.drinks[+c.dataset.t].enabled = c.checked; await saveRecipes(c.checked?"Drink is on the menu":"Drink is hidden"); });
+  $("add").onclick = ()=>{ editing = {i:-1, d:{id:"drink-"+Date.now().toString(36), name:"New drink", desc:"", temp:"hot", sugar:true, enabled:false,
+    prices:{"10":1.99,"12":2.29,"16":2.69}, layers:[["#3A2214",.2],["#D6BC98",.8]], steps:[{op:"espresso",g:9,ml:40},{op:"mix",mixer:1,ml:200,water:"hot",powders:{"2":14},whipS:5}]}}; render(); };
+}
+async function saveRecipes(msg){
+  try { await req("/api/admin/recipes","PUT",rec); toast(msg||"Saved"); return true; }
+  catch(e){ toast(e.message); rec = await req("/api/admin/recipes"); render(); return false; }
+}
+
+const OPS = {espresso:"Espresso shot", mix:"Mix powder with water", water:"Plain water", syrup:"Flavor syrup", wait:"Pause"};
+function stepFields(s, k){
+  const num = (f,l,v,st=1)=>`<div><label>${l}</label><input type="number" step="${st}" min="0" data-k="${k}" data-f="${f}" value="${v??""}"></div>`;
+  const waterSel = `<div><label>Water</label><select data-k="${k}" data-f="water"><option value="hot">Hot</option><option value="cold" ${s.water==="cold"?"selected":""}>Chilled</option></select></div>`;
+  if (s.op==="espresso") return `<div class="two">${num("g","Coffee beans (g)",s.g,.5)}${num("ml","Shot size (ml)",s.ml)}</div>`;
+  if (s.op==="water") return `<div class="two">${waterSel}${num("ml","Amount (ml)",s.ml,5)}</div>`;
+  if (s.op==="syrup") return `<div class="two"><div><label>Syrup</label><select data-k="${k}" data-f="pump">${(rec.syrups||["Syrup 1","Syrup 2"]).map((n,i)=>`<option value="${i+1}" ${s.pump==i+1?"selected":""}>${esc(n)}</option>`).join("")}</select></div>${num("ml","Amount (ml)",s.ml)}</div>`;
+  if (s.op==="wait") return `<div class="two">${num("s","Seconds",s.s,.5)}</div>`;
+  if (s.op==="mix") return `<div class="three"><div><label>Mixer</label><select data-k="${k}" data-f="mixer">${[1,2,3].map(m=>`<option ${s.mixer==m?"selected":""}>${m}</option>`).join("")}</select></div>${waterSel}${num("ml","Water (ml)",s.ml,5)}</div>
+    <div class="two">${(rec.canisters||[]).map((n,i)=>`<div><label>${esc(n)} (g)</label><input type="number" step=".5" min="0" data-k="${k}" data-p="${i+1}" value="${s.powders?.[i+1]??""}"></div>`).join("")}</div>
+    <div class="two">${num("whipS","Whisk after (s)",s.whipS,.5)}</div>`;
+  return "";
+}
+function renderEditor(){
+  const d = editing.d;
+  setTop(editing.i<0 ? "New drink" : d.name, "Edit drink", ()=>{ editing=null; render(); });
+  $("main").innerHTML = `
+    <div class="card">
+      <label for="eName">Name on the menu</label><input id="eName" type="text" value="${esc(d.name)}" maxlength="32">
+      <label for="eDesc">Short description</label><input id="eDesc" type="text" value="${esc(d.desc)}" maxlength="60">
+      <div class="two"><div><label for="eTemp">Section</label><select id="eTemp"><option value="hot">Hot</option><option value="cold" ${d.temp==="cold"?"selected":""}>Chilled</option></select></div>
+      <div><label>Sugar choice</label><div class="row" style="min-height:46px"><span class="muted">Offer sugar</span><label class="switch"><input id="eSugar" type="checkbox" ${d.sugar!==false?"checked":""}><span></span></label></div></div></div>
+    </div>
+    <div class="card"><h3>Prices</h3><p class="muted" style="margin:0">Leave a size blank to not sell it.</p>
+      <div class="three">${SIZES.map(s=>`<div><label>${s} oz</label><input type="number" step=".01" min="0" data-price="${s}" value="${d.prices?.[s]??""}"></div>`).join("")}</div></div>
+    <div class="card"><h3>Recipe for a 12 oz cup</h3><p class="muted" style="margin-top:0">Steps run in order. 10 oz and 16 oz cups scale these amounts automatically.</p>
+      ${d.steps.map((s,k)=>`<div class="step"><div class="head"><select data-k="${k}" data-f="op">${Object.entries(OPS).map(([v,n])=>`<option value="${v}" ${s.op===v?"selected":""}>${k+1}. ${n}</option>`).join("")}</select>
+        <button class="icon" data-up="${k}" aria-label="Move up">&uarr;</button><button class="icon" data-dn="${k}" aria-label="Move down">&darr;</button><button class="icon" data-rm="${k}" aria-label="Remove step">&times;</button></div>${stepFields(s,k)}</div>`).join("")}
+      <button class="btn alt small" id="addStep">Add a step</button></div>
+    <div class="btns"><button class="btn" id="save">Save drink</button><button class="btn alt" id="test">Make a test drink</button>
+      ${editing.i>=0?`<button class="btn alt" id="dup">Duplicate</button><button class="btn warn" id="del">Delete</button>`:""}</div>`;
+  const pull = ()=>{
+    d.name = $("eName").value.trim() || "Drink"; d.desc = $("eDesc").value.trim(); d.temp = $("eTemp").value; d.sugar = $("eSugar").checked;
+    d.prices = {}; document.querySelectorAll("[data-price]").forEach(i=>{ if(i.value!=="") d.prices[i.dataset.price] = Math.round(parseFloat(i.value)*100)/100; });
+    document.querySelectorAll("[data-k][data-f]").forEach(i=>{ const s=d.steps[+i.dataset.k], f=i.dataset.f; if(f==="op") return;
+      s[f] = (f==="water") ? i.value : (i.value===""? undefined : parseFloat(i.value)); });
+    document.querySelectorAll("[data-k][data-p]").forEach(i=>{ const s=d.steps[+i.dataset.k]; s.powders = s.powders||{}; if(i.value===""||+i.value===0) delete s.powders[i.dataset.p]; else s.powders[i.dataset.p]=parseFloat(i.value); });
+  };
+  const defaults = {espresso:{g:9,ml:40}, mix:{mixer:1,ml:200,water:"hot",powders:{},whipS:5}, water:{ml:250,water:"hot"}, syrup:{pump:1,ml:15}, wait:{s:2}};
+  document.querySelectorAll("[data-f=op]").forEach(sel=>sel.onchange=()=>{ pull(); d.steps[+sel.dataset.k] = {op:sel.value, ...structuredClone(defaults[sel.value])}; renderEditor(); });
+  document.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{ pull(); const k=+b.dataset.up; if(k>0)[d.steps[k-1],d.steps[k]]=[d.steps[k],d.steps[k-1]]; renderEditor(); });
+  document.querySelectorAll("[data-dn]").forEach(b=>b.onclick=()=>{ pull(); const k=+b.dataset.dn; if(k<d.steps.length-1)[d.steps[k+1],d.steps[k]]=[d.steps[k],d.steps[k+1]]; renderEditor(); });
+  document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ pull(); if(d.steps.length>1){ d.steps.splice(+b.dataset.rm,1); renderEditor(); } else toast("A drink needs at least one step."); });
+  $("addStep").onclick = ()=>{ pull(); if(d.steps.length>=12) return toast("A drink can have up to 12 steps."); d.steps.push({op:"water",ml:100,water:"hot"}); renderEditor(); };
+  $("save").onclick = async ()=>{
+    pull(); if(!Object.keys(d.prices).length) return toast("Set a price for at least one size.");
+    const backup = structuredClone(rec.drinks);
+    if (editing.i<0) rec.drinks.push(d); else rec.drinks[editing.i]=d;
+    if (await saveRecipes("Drink saved")){ editing=null; render(); } else rec.drinks = backup;
+  };
+  $("test").onclick = async ()=>{ pull(); if(editing.i<0) return toast("Save the drink first."); const s = d.prices["12"]!=null?"12":Object.keys(d.prices)[0];
+    if (await act("testVend",{drink:d.id,size:s})) toast(`Making a free ${s} oz test drink`); };
+  if ($("dup")) $("dup").onclick = ()=>{ pull(); editing = {i:-1, d:{...structuredClone(d), id:d.id+"-copy-"+Date.now().toString(36).slice(-3), name:d.name+" copy", enabled:false}}; renderEditor(); };
+  if ($("del")) $("del").onclick = async ()=>{ if(!confirm(`Delete ${d.name}? This can't be undone.`)) return; rec.drinks.splice(editing.i,1); if(await saveRecipes("Drink deleted")){ editing=null; render(); } };
+}
+
+/* ---------------- stock ---------------- */
+function meter(v, cap){ const p = Math.max(0, Math.min(1, v/cap)); return `<div class="meter ${p<.05?"empty":p<.2?"low":""}"><i style="width:${Math.round(p*100)}%"></i></div>`; }
+function renderStock(){
+  setTop("Stock", "Enter what's in the machine after refilling");
+  const inv = sum.inventory;
+  const field = (id,label,v,cap)=>`<div><label for="${id}">${label}</label><div class="row"><input id="${id}" type="number" min="0" value="${Math.round(v)}"><button class="btn alt small" data-full="${id}" data-cap="${cap}">Full</button></div>${meter(v,cap)}</div>`;
+  $("main").innerHTML = `
+    ${sum.settings.bottled ? `<div class="card"><h3>Water bottles</h3>
+      <p class="muted" style="margin-top:0">${sum.water?.empty ? "<b>Out of water: put in 2 full bottles.</b> " : ""}${sum.settings.bottleSensors ? `Bottle sensors: bottle 1 ${sum.water?.bottle1===false?"empty":"has water"}, bottle 2 ${sum.water?.bottle2===false?"empty":"has water"}. Sales stop on the sensors; the count below is a guide.` : "No bottle sensors: sales stop when this count runs out."} Cashiers can press <b>Bottles swapped</b> on the counter screen.</p>
+      ${field("sWater","Water left (ml). Two full 3-gallon bottles = 22,700",inv.water_ml||0,CAP.water_ml)}
+      <button class="btn alt small" id="swapNow" style="margin-top:8px">Bottles swapped now</button></div>` : ""}
+    <div class="card"><h3>Coffee</h3>${field("sBeans","Beans (g)",inv.beans_g,CAP.beans_g)}</div>
+    <div class="card"><h3>Powders</h3>${(rec.canisters||[]).map((n,i)=>field("sCan"+i, esc(n)+" (g)", inv.canisters_g[i]||0, CAP.canister)).join("")}</div>
+    <div class="card"><h3>Syrups</h3>${(rec.syrups||[]).map((n,i)=>field("sSyr"+i, esc(n)+" (ml)", inv.syrups_ml[i]||0, CAP.syrup)).join("")}</div>
+    <div class="card"><h3>Cups and lids</h3>${SIZES.map(s=>field("sCup"+s, s+" oz cups", inv.cups[s]||0, CAP.cups[s])).join("")}${field("sLids","Lids",inv.lids,CAP.lids)}</div>
+    <button class="btn" id="saveStock" style="width:100%">Save stock levels</button>`;
+  document.querySelectorAll("[data-full]").forEach(b=>b.onclick=()=>{ $(b.dataset.full).value = b.dataset.cap; });
+  if ($("swapNow")) $("swapNow").onclick = async ()=>{ if(!confirm("Did you put in 2 full bottles?")) return; try { await req("/api/admin/action","POST",{action:"bottlesSwapped"}); toast("Water count reset to 2 full bottles"); await reload(); } catch(e){ toast(e.message); } };
+  $("saveStock").onclick = async ()=>{
+    const v = id => Math.max(0, parseFloat($(id).value)||0);
+    const body = {beans_g:v("sBeans"), ...($("sWater") ? {water_ml:v("sWater")} : {}), canisters_g:(rec.canisters||[]).map((_,i)=>v("sCan"+i)), syrups_ml:(rec.syrups||[]).map((_,i)=>v("sSyr"+i)),
+      cups:Object.fromEntries(SIZES.map(s=>[s, Math.round(v("sCup"+s))])), lids:Math.round(v("sLids"))};
+    try { await req("/api/admin/inventory","POST",body); toast("Stock saved"); await reload(); } catch(e){ toast(e.message); }
+  };
+}
+
+/* ---------------- machine ---------------- */
+function renderMachine(){
+  setTop("Machine", `Firmware ${sum.firmware} · on for ${Math.round(sum.uptimeMin/60)} h`);
+  const targets = [...(rec.canisters||[]).map((n,i)=>[`canister:${i+1}`, n, "g", "canisterGps", i]), ["grinder:0","Coffee grinder","g","grinderGps",null],
+    ...(rec.syrups||[]).map((n,i)=>[`syrup:${i+1}`, n+" syrup", "ml", "syrupMlps", i]), ...[1,2,3].map(m=>[`mixer:${m}`, `Mixer ${m} water`, "ml", "mixerMlps", m-1]),
+    ["spout:0","Hot water spout","ml","spoutMlps",null], ["cold:0","Chilled water","ml","coldMlps",null]];
+  $("main").innerHTML = `
+    <div class="card status ${sum.settings.moving?"warn":""}"><div class="grow"><h3>${sum.settings.moving?"Ready to move":"Moving the machine"}</h3>
+      <div class="muted">${sum.settings.moving ? "Heaters, chiller and sales are off. After moving: plug in, swap in full water bottles, update Stock, then press Back in service." : "Turns off heaters, chiller and sales so the machine can cool before you unplug it. Empty the wastewater bucket and grounds bin, remove the water bottles, and lock the casters' brakes off."}</div></div>
+      <button class="btn small ${sum.settings.moving?"":"alt"}" id="move">${sum.settings.moving?"Back in service":"Get ready to move"}</button></div>
+    <div class="card"><h3>Quick actions</h3><div class="btns">
+      <button class="btn" data-a="rinse">Rinse now</button><button class="btn alt" data-a="unlockDoor">Unlock door</button>
+      <button class="btn alt" data-a="clearFaults">Clear faults</button><button class="btn alt" data-a="prime">Prime espresso heater</button>
+      <button class="btn alt" data-a="restart">Restart controller</button></div></div>
+    <div class="card"><h3>Make a free test drink</h3><div class="two"><select id="tDrink">${rec.drinks.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join("")}</select>
+      <select id="tSize">${SIZES.map(s=>`<option ${s==="12"?"selected":""}>${s}</option>`).join("")}</select></div>
+      <button class="btn" id="tGo" style="margin-top:12px">Make it</button></div>
+    <div class="card"><h3>Calibrate a dispenser</h3><p class="muted" style="margin-top:0">Put a cup on a scale under the outlet, run it, then type what came out. Do this after changing an ingredient.</p>
+      <div class="two"><div><label for="cT">Dispenser</label><select id="cT">${targets.map(t=>`<option value="${t[0]}">${esc(t[1])}</option>`).join("")}</select></div>
+      <div><label for="cS">Seconds</label><input id="cS" type="number" value="3" min="1" max="10"></div></div>
+      <button class="btn alt" id="cRun" style="margin-top:12px">Run dispenser</button>
+      <div id="cResult" hidden><label for="cAmt">Amount that came out</label><div class="row"><input id="cAmt" type="number" step=".1" min="0"><span id="cUnit" class="muted"></span></div>
+      <button class="btn" id="cSave" style="margin-top:12px">Save calibration</button></div></div>
+    <div class="card"><h3>Sales records</h3><p class="muted" style="margin-top:0">Every sale with time, drink, size and payment type.</p><button class="btn alt" id="csv">Download sales (CSV)</button></div>`;
+  document.querySelectorAll("[data-a]").forEach(b=>b.onclick=async()=>{
+    if (b.dataset.a==="restart" && !confirm("Restart the controller? The machine is offline for about 20 seconds.")) return;
+    if (await act(b.dataset.a)) toast({rinse:"Rinsing started",unlockDoor:"Door unlocked for 3 seconds",clearFaults:"Faults cleared",prime:"Priming the espresso heater",restart:"Restarting"}[b.dataset.a]);
+  });
+  $("move").onclick = async()=>{ const on = !sum.settings.moving;
+    if (on && !confirm("Turn off heaters, chiller and sales so you can move the machine?")) return;
+    if (await act("moveMode",{on})){ toast(on ? "Ready to move. Wait 20 minutes for it to cool before unplugging." : "Back in service. Heating up now."); await reload(); } };
+  $("tGo").onclick = async()=>{ if(await act("testVend",{drink:$("tDrink").value,size:$("tSize").value})) toast("Making a free test drink"); };
+  let lastRun = null;
+  $("cRun").onclick = async()=>{ const [t,i] = $("cT").value.split(":"); const sec = parseFloat($("cS").value)||3;
+    if (await act("dispense",{target:t,index:+i,seconds:sec})){ lastRun = {key:$("cT").value, sec}; const tt = targets.find(x=>x[0]===lastRun.key);
+      $("cUnit").textContent = tt[2]; $("cResult").hidden = false; toast(`Running for ${sec} s`); } };
+  $("cSave").onclick = async()=>{ if(!lastRun) return; const tt = targets.find(x=>x[0]===lastRun.key); const amt = parseFloat($("cAmt").value);
+    if (!(amt>0)) return toast("Type the amount that came out.");
+    const rate = Math.round(amt/lastRun.sec*100)/100; const cal = rec.calibration = rec.calibration||{};
+    if (tt[4]===null) cal[tt[3]] = rate; else { cal[tt[3]] = cal[tt[3]]||[]; cal[tt[3]][tt[4]] = rate; }
+    if (await saveRecipes(`Saved: ${rate} ${tt[2]} per second`)) $("cResult").hidden = true; };
+  $("csv").onclick = async()=>{ try{ const t = await req("/api/admin/sales.csv"); const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([t],{type:"text/csv"})); a.download="sales.csv"; a.click(); } catch(e){ toast(e.message); } };
+}
+
+/* ---------------- settings ---------------- */
+function renderSettings(){
+  setTop("Settings", sum.wifi?.storeConnected ? `On store Wi-Fi at ${sum.wifi.storeIp}` : "Not on store Wi-Fi");
+  const sw = (id,label,hint,on)=>`<div class="row" style="padding:10px 0"><div class="grow"><b>${label}</b><div class="muted">${hint}</div></div><label class="switch"><input id="${id}" type="checkbox" ${on?"checked":""}><span></span></label></div>`;
+  $("main").innerHTML = `
+    <div class="card"><h3>Selling</h3>
+      ${sw("sFree","Free mode","Drinks start without a counter code. Use for testing; turn off before opening.",sum.testMode)}
+      ${sw("sLids","Drop a lid with every drink","",sum.settings.lids!==false)}
+      ${sw("sChiller","Chiller fitted","Turn on only if the optional water chiller is installed. Shows chilled drinks on the menu.",sum.settings.chiller)}
+      ${sw("sBottled","Water bottles","Uses the 2 bottles in the base. Turn off only if a water line is connected.",sum.settings.bottled)}
+      ${sw("sBSens","Bottle sensors fitted","Turn on once the 2 stick-on level sensors are wired to inputs 18 and 19. Sales then stop when a bottle is really empty.",sum.settings.bottleSensors)}
+      <label for="sRinse">Daily rinse time</label><select id="sRinse">${Array.from({length:24},(_,h)=>`<option value="${h}" ${h==sum.settings.rinseHour?"selected":""}>${new Date(2000,0,1,h).toLocaleTimeString([],{hour:"numeric"})}</option>`).join("")}</select>
+      <button class="btn" id="saveSell" style="margin-top:14px">Save</button></div>
+    <div class="card"><h3>Menu name</h3>
+      <label for="bName">Name</label><input id="bName" type="text" value="${esc(rec.brand?.name)}" maxlength="24">
+      <label for="bTag">Tagline</label><input id="bTag" type="text" value="${esc(rec.brand?.tagline)}" maxlength="40">
+      <button class="btn" id="saveBrand" style="margin-top:14px">Save</button></div>
+    <div class="card"><h3>Store Wi-Fi</h3><p class="muted" style="margin-top:0">Join the store's Wi-Fi so you can manage the machine from anywhere in the store.</p>
+      <label for="wS">Network name</label><input id="wS" type="text" value="${esc(sum.wifi?.store)}">
+      <label for="wP">Password</label><input id="wP" type="password" placeholder="Unchanged">
+      <button class="btn" id="saveWifi" style="margin-top:14px">Save and restart</button></div>
+    <div class="card"><h3>Machine Wi-Fi</h3><p class="muted" style="margin-top:0">The private network the touchscreen uses. Change the tablet's saved network too.</p>
+      <label for="aS">Network name</label><input id="aS" type="text" value="${esc(sum.wifi?.ap)}">
+      <label for="aP">Password (8 or more characters)</label><input id="aP" type="password" placeholder="Unchanged">
+      <button class="btn" id="saveAp" style="margin-top:14px">Save and restart</button></div>
+    <div class="card"><h3>Counter</h3><p class="muted" style="margin-top:0">Cashiers open <b>${esc(base)}/counter</b> on a phone or the register computer, take payment, and make a 4-digit code for the drink. Customers type the code on the machine.</p>
+      <label for="cPin">Counter PIN (for cashiers)</label><input id="cPin" type="password" inputmode="numeric" class="pin" placeholder="Unchanged">
+      <label for="cHours">Codes expire after</label><select id="cHours">${[4,8,12,24,48].map(h=>`<option value="${h}" ${h==(sum.settings.codeHours||12)?"selected":""}>${h} hours</option>`).join("")}</select>
+      <button class="btn" id="saveCounter" style="margin-top:14px">Save</button></div>
+    <div class="card"><h3>Owner PIN</h3><label for="nP">New PIN</label><input id="nP" type="password" inputmode="numeric" class="pin">
+      <button class="btn" id="savePin" style="margin-top:14px">Change PIN</button></div>
+    <button class="btn alt" id="out" style="width:100%">Sign out</button>`;
+  const post = async (b, m)=>{ try{ const r = await req("/api/admin/settings","POST",b); toast(r.restarting ? "Saved. The machine is restarting." : m||"Saved"); if(!r.restarting) await reload(); return true; } catch(e){ toast(e.message); return false; } };
+  $("saveSell").onclick = ()=>post({freeVend:$("sFree").checked, lids:$("sLids").checked, bottled:$("sBottled").checked, bottleSensors:$("sBSens").checked, chiller:$("sChiller").checked, rinseHour:+$("sRinse").value});
+  $("saveBrand").onclick = async()=>{ rec.brand = {name:$("bName").value.trim()||"Fresh Ground", tagline:$("bTag").value.trim()}; await saveRecipes("Menu name saved"); };
+  $("saveWifi").onclick = ()=>{ const b={staSsid:$("wS").value.trim()}; if($("wP").value) b.staPass=$("wP").value; post(b); };
+  $("saveAp").onclick = ()=>{ const b={apSsid:$("aS").value.trim()}; if($("aP").value) b.apPass=$("aP").value; if(confirm("The touchscreen will disconnect until you update its Wi-Fi. Continue?")) post(b); };
+  $("savePin").onclick = async()=>{ const p=$("nP").value.trim(); if(p.length<4) return toast("Use at least 4 digits."); if(await post({adminPin:p},"PIN changed")){ pin=p; sessionStorage.setItem("ownerPin",p); } };
+  $("saveCounter").onclick = ()=>{ const b={codeHours:+$("cHours").value}; const p=$("cPin").value.trim(); if(p){ if(p.length<4) return toast("Use at least 4 digits."); b.counterPin=p; } post(b, "Counter settings saved"); };
+  $("out").onclick = ()=>signOut();
+}
+
+if (pin) $("pin").value = pin, $("loginBtn").click();
+</script>
+</body>
+</html>
